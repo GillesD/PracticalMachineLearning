@@ -1,0 +1,93 @@
+---
+title: "Prediction Assignment Writeup"
+author: "Gilles DELPECH"
+date: "30/12/2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+
+```
+
+## Prediction Assignment Writeup
+
+The goal of your project is to predict the manner in which they did the exercise. This is the "classe" variable in the training set. You may use any of the other variables to predict with. You should create a report describing how you built your model, how you used cross validation, what you think the expected out of sample error is, and why you made the choices you did. You will also use your prediction model to predict 20 different test cases.
+
+The training data for this project are available here:
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv
+
+The test data are available here:
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv
+
+The data for this project come from this source: http://groupware.les.inf.puc-rio.br/har.
+
+### Loading required libraries
+
+```{r librairies}
+library(lattice)
+library(ggplot2)
+library(caret)
+library(randomForest)
+library(rpart)
+library(rpart.plot)
+
+set.seed(12345)
+```
+
+### Loading data raw in csv files (training and testing)
+
+```{r chargement}
+trainingset <- read.csv("pml-training.csv", na.strings=c("NA","#DIV/0!", ""))
+testingset <- read.csv("pml-testing.csv", na.strings=c("NA","#DIV/0!", ""))
+```
+
+### Delete NA values in data training data set and testing data set
+
+```{r}
+trainingset<-trainingset[,colSums(is.na(trainingset)) == 0]
+testingset <-testingset[,colSums(is.na(testingset)) == 0]
+```
+
+### Data processing
+
+```{r}
+trainingset <-trainingset[,-c(1:7)]
+testingset <-testingset[,-c(1:7)]
+
+traintrainset <- createDataPartition(y=trainingset$classe, p=0.75, list=FALSE)
+TrainTrainingSet <- trainingset[traintrainset, ] 
+TestTrainingSet <- trainingset[-traintrainset, ]
+```
+
+### Plot the levels of variable 'classe' within the TrainTrainingSet data set
+
+```{r}
+plot(TrainTrainingSet$classe, col="cyan", main="Niveaux de la variable 'classe' dans le data set TrainTrainingSet", xlab="classe", ylab="Fréquence")
+```
+
+### Prediction 1 with Classification Tree algorithm and test on TestTraingTest - Accuracy : 0.7229
+
+```{r}
+modele1 <- rpart(classe ~ ., data=TrainTrainingSet, method="class")
+prediction1 <- predict(modele1, TestTrainingSet, type = "class")
+rpart.plot(modele1, main="Arbre de Classification", extra=102, under=TRUE, faclen=0)
+confusionMatrix(prediction1, TestTrainingSet$classe)
+```
+
+### Prediction 2 with Random Forest algorithm - Accuracy : 0.9949
+
+
+```{r}
+modele2 <- randomForest(classe ~. , data=TrainTrainingSet, method="class")
+prediction2 <- predict(modele2, TestTrainingSet, type = "class")
+confusionMatrix(prediction2, TestTrainingSet$classe)
+```
+
+### The prediction 2 is better than prediction 1 - Show the results
+
+
+```{r}
+predictionfinale <- predict(modele2, testingset, type="class")
+predictionfinale
+```
+
